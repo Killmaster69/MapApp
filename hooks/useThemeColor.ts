@@ -1,21 +1,72 @@
-/**
- * Learn more about light and dark modes:
- * https://docs.expo.dev/guides/color-schemes/
- */
+import { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FavoritePin } from '../constants';
 
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+export const useFavorites = () => {
+  const [favorites, setFavorites] = useState<FavoritePin[]>([]);
 
-export function useThemeColor(
-  props: { light?: string; dark?: string },
-  colorName: keyof typeof Colors.light & keyof typeof Colors.dark
-) {
-  const theme = useColorScheme() ?? 'light';
-  const colorFromProps = props[theme];
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const storedFavorites = await AsyncStorage.getItem('favorites');
+        if (storedFavorites) {
+          setFavorites(JSON.parse(storedFavorites));
+        }
+      } catch (error) {
+        console.error('Error loading favorites', error);
+      }
+    };
 
-  if (colorFromProps) {
-    return colorFromProps;
-  } else {
-    return Colors[theme][colorName];
-  }
-}
+    loadFavorites();
+  }, []);
+
+  const saveFavoritesToStorage = async (favoritesToSave: FavoritePin[]) => {
+    try {
+      await AsyncStorage.setItem('favorites', JSON.stringify(favoritesToSave));
+    } catch (error) {
+      console.error('Error saving favorites', error);
+    }
+  };
+
+  const addFavorite = (newFavorite: FavoritePin) => {
+    const updatedFavorites = [...favorites, newFavorite];
+    setFavorites(updatedFavorites);
+    saveFavoritesToStorage(updatedFavorites);
+  };
+
+  const updateFavoriteLocation = (oldFavorite: FavoritePin, newCoordinates: { latitude: number, longitude: number }) => {
+    const updatedFavorites = favorites.map((fav) =>
+      fav.latitude === oldFavorite.latitude && fav.longitude === oldFavorite.longitude
+        ? { ...fav, ...newCoordinates }
+        : fav
+    );
+    setFavorites(updatedFavorites);
+    saveFavoritesToStorage(updatedFavorites);
+  };
+
+  const updateFavorite = (editedFavorite: FavoritePin) => {
+    const updatedFavorites = favorites.map((fav) =>
+      fav.latitude === editedFavorite.latitude && fav.longitude === editedFavorite.longitude
+        ? editedFavorite
+        : fav
+    );
+    setFavorites(updatedFavorites);
+    saveFavoritesToStorage(updatedFavorites);
+  };
+
+  const deleteFavorite = (favoriteToDelete: FavoritePin) => {
+    const updatedFavorites = favorites.filter(
+      (fav) => fav.latitude !== favoriteToDelete.latitude || fav.longitude !== favoriteToDelete.longitude
+    );
+    setFavorites(updatedFavorites);
+    saveFavoritesToStorage(updatedFavorites);
+  };
+
+  return {
+    favorites,
+    addFavorite,
+    updateFavorite,
+    updateFavoriteLocation,
+    deleteFavorite
+  };
+};
