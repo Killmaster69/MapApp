@@ -275,7 +275,7 @@ const MapComponent = () => {
             origin={origin}
             destination={destination}
             mode={selectedMode}
-            apiKey="AIzaSyA8JqU1Jdow9eeW_AOvBIjBA784cEeyKy4"
+            apiKey="ExampleAPIKey" // Replace with your actual API key
             strokeWidth={10}
             strokeColor="blue"
           />
